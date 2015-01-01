@@ -2,4 +2,4 @@ siteswap-js
 ===========
 
 TODO
-  1.
+  1. Index
