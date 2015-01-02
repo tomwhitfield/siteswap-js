@@ -32,12 +32,4 @@ function draw() {
 }
 
 
-function drawBall(x, y) {
-	ctx.beginPath()
-	ctx.arc(x, y, 10, 0, 2 * Math.PI, false)
-	ctx.fillStyle = '#00B000'
-	ctx.fill()
-	ctx.lineWidth = 2
-	ctx.strokeStyle = '#333333'
-	ctx.stroke()
-}
+
