@@ -1,0 +1,29 @@
+{
+  "name": "siteswap-js",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "start": "watch-http-server -p 7531 -c-1 .",
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "lint": "jshint src/*.js",
+    "build": "./build.sh",
+    "minify": "minify ss.js > ss.min.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/tomwhitfield/siteswap-js"
+  },
+  "keywords": [
+    "siteswap",
+    "animator",
+    "juggling"
+  ],
+  "author": "Tom Whitfield",
+  "license": "ISC",
+  "dependencies": {
+    "jshint": "^2.12.0",
+    "minify": "^7.0.2",
+    "watch-http-server": "^0.7.6"
+  }
+}

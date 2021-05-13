@@ -1,0 +1,23 @@
+{
+  "esversion": 6,
+  "globals": {
+    "Throw": true,
+    "Juggler": true,
+    "GIFEncoder": true,
+    "encode64": true,
+    "document": true,
+    "window": true,
+    "drawBall": true,
+    "drawClub": true,
+    "drawRing": true,
+    "drawJuggler": true,
+    "drawImage": true,
+    "Props": true,
+    "Prop": true,
+    "Hands": true,
+    "HeadBounce": true,
+    "ClubBalance": true,
+    "Image": true
+  }
+}
+

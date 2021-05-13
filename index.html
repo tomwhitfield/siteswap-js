@@ -1,14 +1,118 @@
 <html>
 	<head>
-	<title>Siteswap Animator</title>
+		<title>SiteswapJS</title>
+		<meta name="viewport" content="width=device-width, initial-scale=1.0">
 	</head>
 	
-	<body>
-	
-		<canvas id="stage" width="400" height="800" style="border: 1px solid #333333;"></canvas>
-		<p id="debug"></p>
+	<body onload="juggle()" style="margin: 0">
+		<canvas id="stage" width="480" height="640" style="border: 1px solid #333333;"></canvas>
+
+		<!-- <script src="ss.js"></script> -->
+		<script src="src/Animator.js"></script>
+		<script src="src/ClubBalance.js"></script>
+		<script src="src/Draw.js"></script>
+		<script src="src/Hands.js"></script>
+		<script src="src/HeadBounce.js"></script>
+		<script src="src/Juggler.js"></script>
+		<script src="src/Prop.js"></script>
+		<script src="src/Props.js"></script>
+		<script src="src/Throw.js"></script>
+
+		<!-- GIF export stuff -->
+		<script src="src/gif/LZWEncoder.js"></script>
+		<script src="src/gif/NeuQuant.js"></script>
+		<script src="src/gif/GIFEncoder.js"></script>
+		<script src="src/gif/b64.js"></script>
 		
-		<script src="animator.js"></script>
-	
+		<script>
+			let options = {
+				fps: 60,
+				throwsPerSecond: 3,
+				exportGif: false,
+				backgroundColour: '#FFFFFF',
+				controls: true,
+				debug: true,
+			};
+
+			let animator;
+
+			function getOptions() {
+				const propType = document.getElementById("prop").value;
+				const spinOn0s = document.getElementById("spinOn0s").checked;
+				const spinOn2s = document.getElementById("spinOn2s").checked;
+				const headBounce = document.getElementById("head-bounce").checked;
+				const clubBalance = document.getElementById("club-balance").checked;
+
+				return {
+					...options,
+					propType,
+					// spins,
+					spinOn0s,
+					spinOn2s,
+					headBounce,
+					clubBalance,
+				};
+			}
+
+			function juggle() {
+				if (animator) animator.stop();
+				start(getOptions());
+			}
+
+			function exportGif() {
+				if (animator) animator.stop();
+
+				const options = getOptions();
+				options.exportGif = true;
+				options.fps = 30;
+				options.debug = false;
+
+				start(options);
+			}
+
+			function start(options) {
+				const siteswap = document.getElementById("siteswap").value;
+				animator = new SiteswapJS('stage', siteswap, options);
+				animator.start();
+			}
+		</script>
+
+		<div style="margin-left: 1em">
+			<p>
+				<input type="button" value="-5 degrees" onclick="javascript: animator.getJuggler().rotate(-5)">&nbsp;
+				<input type="button" value="+5 degrees" onclick="javascript: animator.getJuggler().rotate(5)">&nbsp;
+				<input type="button" value="+90 degrees" onclick="javascript: animator.getJuggler().rotate(90)">
+			</p>
+
+			<p>
+				Props: <select id="prop">
+					<option value="b">Balls</option>
+					<option value="c">Clubs</option>
+					<option value="r">Rings</option>
+				</select>
+
+				&nbsp;&nbsp;
+
+				Siteswap: <input type="text" id="siteswap" value="779990022555">
+
+				<br><br>
+
+				Spin on 0s: <input type="checkbox" id="spinOn0s" checked>&nbsp;&nbsp;
+				Spin on 2s: <input type="checkbox" id="spinOn2s" checked>
+
+				<br><br>
+
+				Head bounce: <input id="head-bounce" type="radio" name="head" checked>&nbsp;&nbsp;
+				Club balance: <input id="club-balance" type="radio" name="head">&nbsp;&nbsp;
+				None: <input type="radio" name="head">
+			</p>
+
+			<p>
+				<input type="button" value="Juggle!" onClick="juggle()">&nbsp;&nbsp;&nbsp;
+				<input type="button" value="Generate GIF!" onclick="javascript: exportGif()">
+			</p>
+		</div>
+
+		<img src="" id="gif-output">
 	</body>	
 </html>
