@@ -670,7 +670,7 @@ const drawJuggler = (ctx, x, y, r, scale, height, headBob, pos, propType, holdin
 'use strict';
 
 function Hands(ss) {
-  this.siteswap = ss.replace(/\s/g,'');
+  this.siteswap = ss.replace(/\s/g,'').split('2t').join('2');
   this.left = [];
   this.right = [];
   this.type = '';
