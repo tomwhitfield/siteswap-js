@@ -7,6 +7,7 @@
     "encode64": true,
     "document": true,
     "window": true,
+    "drawProp": true,
     "drawBall": true,
     "drawClub": true,
     "drawRing": true,

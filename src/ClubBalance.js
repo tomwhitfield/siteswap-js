@@ -1,8 +1,9 @@
 /* jshint -W097 */
 'use strict';
 
-function ClubBalance(timeUnit) {
+function ClubBalance(timeUnit, style) {
   this.timeUnit = timeUnit;
+  this.style = style;
 
   this.maxR = 2.5;
 
@@ -34,7 +35,7 @@ ClubBalance.prototype.update = function(scale, height) {
 };
 
 ClubBalance.prototype.draw = function(ctx, x, y, scale, height) {
-  drawClub(ctx, x + this.x + this.px, y + this.y + this.py, 0, this.r, scale, height);
+  drawClub(ctx, x + this.x + this.px, y + this.y + this.py, 0, this.r, scale, height, this.style);
 };
 
 ClubBalance.prototype.getHeadReaction = function() {

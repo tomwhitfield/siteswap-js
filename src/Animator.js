@@ -67,10 +67,12 @@ SiteswapJS.prototype.draw = function() {
   // Clear canvas
   this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
 
-  // Fill background colour
-  if (this.options.backgroundColour) {
-    this.ctx.fillStyle = this.options.backgroundColour;
+  // Background
+  if (this.options.styles.background) {
+    this.ctx.fillStyle = this.options.styles.background.fill;
+    this.ctx.strokeStyle = this.options.styles.background.stroke;
     this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+    this.ctx.strokeRect(0, 0, this.canvas.width, this.canvas.height);
   }
 
   // Draw juggler and props
@@ -91,8 +93,8 @@ SiteswapJS.prototype.draw = function() {
   }
 };
 
-SiteswapJS.prototype.setDefaultOptions = function(options) {
-  const defaultOptions = {
+SiteswapJS.prototype.setDefaultOptions = function(custom) {
+  const options = {
     fps: 60,
     throwsPerSecond: 3,
     propType: 'b',
@@ -103,9 +105,45 @@ SiteswapJS.prototype.setDefaultOptions = function(options) {
     clubBalance: false,
     debug: false,
     controls: false,
+    styles: {
+      background: {
+        fill: '#FFF',
+        stroke: '#FFF',
+      },
+      props: [
+        {
+          fill: '#8BC34A',
+          stroke: '#333',
+        },
+      ],
+      headBounce: {
+        fill: '#DDD',
+        stroke: '#333',
+      },
+      clubBalance: {
+        stroke: '#333',
+      },
+      head: {
+        fill: '#FFDAC8',
+        stroke: '#333',
+      },
+      body: {
+        fill: '#BDBDBD',
+        stroke: '#333',
+      },
+    }
   };
 
-  options = Object.assign(defaultOptions, options);
+  function combineOptions(options, custom) {
+    for (const key of Object.keys(options)) {
+      if (!custom[key]) continue;
+
+      if (typeof custom[key] === 'object' && !Array.isArray(custom[key])) combineOptions(options[key], custom[key]);
+      else options[key] = custom[key];
+    }
+  }
+
+  combineOptions(options, custom);
 
   if (options.propType === 'c') options.controls = false;
 

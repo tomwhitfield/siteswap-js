@@ -7,6 +7,9 @@ function Juggler(options) {
   // Keeps track of where the hands should be and what throws need to be made
   this.hands = new Hands(options.siteswap);
 
+  this.headStyle = options.styles.head;
+  this.bodyStyle = options.styles.body;
+
   // Spin stuff
   this.spins = (options.spinOn0s || options.spinOn2s) && this.generateSpins(this.hands, options.spinOn0s, options.spinOn2s);
   this.spinIndex = 0;
@@ -19,8 +22,8 @@ function Juggler(options) {
   this.timeUnit = Math.round(options.fps / options.throwsPerSecond);
 
   // Head bounce & balance
-  this.headBounce = options.headBounce ? new HeadBounce(this.timeUnit, this.hands.left, options.spinOn0s, options.spinOn2s) : false;
-  this.clubBalance = options.clubBalance ? new ClubBalance(this.timeUnit) : false;
+  this.headBounce = options.headBounce ? new HeadBounce(this.timeUnit, this.hands.left, options.spinOn0s, options.spinOn2s, options.styles.headBounce) : false;
+  this.clubBalance = options.clubBalance ? new ClubBalance(this.timeUnit, options.styles.clubBalance) : false;
 
   this.width = options.width;
   this.height = options.height;
@@ -36,7 +39,7 @@ function Juggler(options) {
     this.scale *= 0.75;
 
   // Keeps track of the props being juggled
-  this.props = new Props(this.propType, this.timeUnit, this.a, this.scale, this.height);
+  this.props = new Props(this.propType, this.timeUnit, this.a, this.scale, this.height, this.hands.holding, options.styles.props);
 
   // For knowing when to throw
   this.count = 1;
@@ -56,15 +59,14 @@ Juggler.prototype.update = function() {
   this.move();
 
   // Move props
-  const catches = this.props.update();
-  this.hands.makeCatches(catches);
+  this.props.update();
   
   if (this.headBounce) this.headBounce.update(this.a);
   if (this.clubBalance) this.clubBalance.update(this.scale, this.height);
 
   // Make new throws
   if (this.count % this.timeUnit === 0) {
-    const throws = this.hands.getNextThrows(this.spinning);
+    const throws = this.hands.getNextThrows();
 
     this.props.makeThrows('left', throws.left, this.hands);
     this.props.makeThrows('right', throws.right, this.hands);
@@ -82,8 +84,9 @@ Juggler.prototype.draw = function(ctx) {
   const headBob = this.scale * this.height * Math.sin(this.count / (this.timeUnit / 2)) / 800;
   const headBounceRecoil = this.headBounce && this.headBounce.getHeadRecoil() * 10 * this.scale;
 
-  if (this.rotation <= 90 || 270 < this.rotation)
-    drawJuggler(ctx, centerX, 9 * this.height / 10, this.rotation + this.spinRotation, this.scale, this.height, headBob - headBounceRecoil, this.hands.positions, this.propType, this.hands.getHolding(this.spinning), this.clubBalance && this.clubBalance.getHeadReaction());
+  if (this.rotation <= 90 || 270 < this.rotation) {
+    this.drawBody(ctx, centerX, 9 * this.height / 10, this.rotation + this.spinRotation, headBob - headBounceRecoil);
+  }
 
   const forehead = 9 * this.height / 10 - 41*(this.scale*this.height)/160;
   if (this.headBounce) {
@@ -97,8 +100,9 @@ Juggler.prototype.draw = function(ctx) {
   const propsY = 9 * this.height / 10 - (this.scale * this.height / 80);
   this.props.draw(ctx, centerX, propsY, this.rotation);
 
-  if (90 < this.rotation && this.rotation <= 270)
-    drawJuggler(ctx, centerX, 9 * this.height / 10, this.rotation + this.spinRotation, this.scale, this.height, headBob - headBounceRecoil, this.hands.positions, this.propType, this.hands.getHolding(this.spinning), this.clubBalance && this.clubBalance.getHeadReaction());
+  if (90 < this.rotation && this.rotation <= 270) {
+    this.drawBody(ctx, centerX, 9 * this.height / 10, this.rotation + this.spinRotation, headBob - headBounceRecoil);
+  }
 };
 
 Juggler.prototype.move = function() {
@@ -235,4 +239,136 @@ Juggler.prototype.calculateScale = function(w, h) {
 
 Juggler.prototype.calculateAcceleration = function(s, t) {
   return (2 * s) / (t * t);
+};
+
+Juggler.prototype.drawBody = function(ctx, x, y, r, headBob) {
+  const pos = this.hands.positions;
+  const props = this.props.props;
+  const headMoveX = this.clubBalance && this.clubBalance.getHeadReaction();
+
+  r %= 360;
+  const h = this.scale * this.height / 4;
+  const w = this.scale * this.height / 8;
+  
+  const yCos = Math.cos(r/180 * Math.PI);
+  const ySin = Math.sin(r/180 * Math.PI);
+  
+  ctx.save();
+  ctx.translate(x, y);
+  
+  // Head image
+  // drawImage(ctx, headMoveX, -36*h/40 + headBob, 0, this.scale, 3.2*this.height, r, true);
+
+  // Head
+  ctx.fillStyle = this.headStyle.fill;
+  ctx.strokeStyle = this.headStyle.stroke;
+  ctx.beginPath();
+  ctx.moveTo(yCos * -5*h/36 + headMoveX, -33*h/40 + headBob);
+  ctx.bezierCurveTo(yCos * -5*h/36 + headMoveX, -41*h/40 + headBob,
+    yCos * 5*h/36 + headMoveX, -41*h/40 + headBob,
+    yCos * 5*h/36 + headMoveX, -33*h/40 + headBob);
+  ctx.bezierCurveTo(yCos * 5*h/36 + headMoveX, -25*h/40 + headBob,
+    yCos * -5*h/36 + headMoveX, -25*h/40 + headBob,
+    yCos * -5*h/36 + headMoveX, -33*h/40 + headBob);
+  ctx.fill();
+  ctx.stroke();
+
+  let drawLeftArm = () => {
+    const handX = yCos * (pos.left.x - 6*w/8) + ySin * h/3;
+    const handY = -5*h/50 + pos.left.y;
+
+    ctx.beginPath();
+    ctx.strokeStyle = this.bodyStyle.stroke;
+    ctx.moveTo(yCos * -w/2, -5*h/8);
+    ctx.lineTo(yCos * (-pos.left.x/8 - 6*w/8), -h/7); // Elbow
+    ctx.lineTo(handX, handY); // Hand
+    ctx.stroke();
+
+    // Props in left hand
+    if (props.left.length) {
+      const split = (this.propType === 'r') ? h/20 : (props.left.length === 1) ? 0 : pos.left.y;
+
+      const startX = yCos * (pos.left.x - 6*w/8) + ySin * ((this.propType === 'r') ? h/2 : h/3); // - ((this.propType === 'r') ? (split / 2) : 0);
+      const startY = handY - ((this.propType === 'r') ? 0 : (split / 2));
+
+      for (let i = 0; i < props.left.length; i++) {
+        const holdingX = startX + ((this.propType === 'r') ? i * (split / props.left.length) : 0);
+        let holdingY = startY + ((this.propType === 'r') ? 0 : i * (split / props.left.length));
+
+        let rotation = r;
+        if (this.propType === 'c') {
+          rotation = 270 - 0.5 * pos.left.y;
+          holdingY += 0.5 * pos.left.y;
+        }
+
+        drawProp(ctx, this.propType, holdingX, holdingY, rotation, 0, this.scale, this.height, props.left[i].style);
+        // props.left[i].draw(ctx, holdingX, holdingY, rotation, this.scale, this.height);
+      }
+    }
+  };
+
+  let drawRightArm = () => {
+    const handX = yCos * (pos.right.x + 6*w/8) + ySin * h/3;
+    const handY = -5*h/50 + pos.right.y;
+
+    ctx.beginPath();
+    ctx.strokeStyle = this.bodyStyle.stroke;
+    ctx.moveTo(yCos * w/2, -5*h/8);
+    ctx.lineTo(yCos * (6*w/8 - pos.right.x/8), -h/7); // Elbow
+    ctx.lineTo(handX, handY); // Hand
+    ctx.stroke();
+    
+    // Props in right hand
+    if (props.right.length) {
+      const split = (this.propType === 'r') ? h/20 : (props.right.length === 1) ? 0 : pos.right.y;
+      
+      const startX = yCos * (pos.right.x + 6*w/8) + ySin * ((this.propType === 'r') ? h/2 : h/3); //  - ((this.propType === 'r') ? (split / 2) : 0);
+      const startY = handY - ((this.propType === 'r') ? 0 : (split / 2));
+
+      for (let i = 0; i < props.right.length; i++) {
+
+        const holdingX = startX + ((this.propType === 'r') ? i * (split / props.right.length) : 0);
+        let holdingY = startY + ((this.propType === 'r') ? 0 : i * (split / props.right.length));
+
+        let rotation = r;
+        if (this.propType === 'c') {
+          rotation = 270 - 0.5 * pos.right.y;
+          holdingY += 0.5 * pos.right.y;
+        }
+
+        drawProp(ctx, this.propType, holdingX, holdingY, rotation, 0, this.scale, this.height, props.right[i].style);
+        // props.right[i].draw(ctx, holdingX, holdingY, rotation, this.scale, this.height);
+      }
+    }
+  };
+
+  // TODO improve this
+  drawRightArm = drawRightArm.bind(this);
+  drawLeftArm = drawLeftArm.bind(this);
+
+  if (r >= 180) {
+    drawLeftArm();
+  } else {
+    drawRightArm();
+  }
+  
+  // Body
+  ctx.fillStyle = this.bodyStyle.fill;
+  ctx.strokeStyle = this.bodyStyle.stroke;
+  ctx.beginPath();
+  ctx.moveTo(yCos * -w/2, -5*h/8);
+  ctx.lineTo(yCos * w/2, -5*h/8);
+  ctx.lineTo(yCos * 7*w/20, 0);
+  ctx.lineTo(yCos * -7*w/20, 0);
+  ctx.lineTo(yCos * -w/2, -5*h/8);
+  ctx.fill();
+  ctx.stroke();
+  
+  if (r < 180) {
+    drawLeftArm();
+  } else {
+    drawRightArm();
+  }
+      
+  ctx.restore();
 };

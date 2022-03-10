@@ -1,8 +1,12 @@
 /* jshint -W097 */
 'use strict';
 
-function Prop(propType, ssValue, startX, destX, timeUnit, a) {
+function Prop(propType, style) {
   this.propType = propType;
+  this.style = style;
+}
+
+Prop.prototype.throw = function(ssValue, startX, destX, timeUnit, a) {
   this.ssValue = ssValue;
 
   // How long the throw should take
@@ -17,7 +21,7 @@ function Prop(propType, ssValue, startX, destX, timeUnit, a) {
   this.vy = -(a * this.t) / 2;
 
   // Initial rotation
-  if (propType === 'r') {
+  if (this.propType === 'r') {
     // Tangential to direction of travel
     this.r = 90 - 180 * Math.atan(-this.vy / this.vx) / Math.PI;
 
@@ -32,22 +36,22 @@ function Prop(propType, ssValue, startX, destX, timeUnit, a) {
       this.r *= 0.2;
   }
   // Clubs and images
-  else if (propType !== 'b') {
+  else if (this.propType !== 'b') {
     this.r = 270;
   }
 
   // Rotational velocity
-  if (propType == 'i') 
+  if (this.propType == 'i') 
     this.vr = 30 * (Math.random() - 0.5);
   else {
     if (ssValue == 2)
       this.vr = 0;
-    else if (propType === 'c')
+    else if (this.propType === 'c')
       this.vr = 360 * (Math.floor(Math.round(ssValue) / 2)) / ((ssValue - 0.5) * timeUnit);
-    else if (propType === 'r')
+    else if (this.propType === 'r')
       this.vr = 0;
   }
-}
+};
 
 Prop.prototype.update = function(a) {
   this.x += this.vx;
@@ -69,14 +73,14 @@ Prop.prototype.draw = function(ctx, x, y, r, scale, height) {
   ctx.translate(x, y);
 
   if (this.propType == 'b')
-    drawBall(ctx, yCos * this.x + ySin * h/3, this.y, scale, height);
+    drawBall(ctx, yCos * this.x + ySin * h/3, this.y, scale, height, this.style);
 
   else if (this.propType == 'c')
-    drawClub(ctx, yCos * this.x + ySin * h/3, this.y, yCos * this.r, 5 * this.vx, scale, height);
+    drawClub(ctx, yCos * this.x + ySin * h/3, this.y, yCos * this.r, 5 * this.vx, scale, height, this.style);
 
   else if (this.propType == 'r') {
     const bow = (this.ssValue % 2 === 1) ? ((this.ssValue - 1) / 2) * this.vx : 0;
-    drawRing(ctx, yCos * this.x + ySin * h/2, this.y, bow, r, scale, height);
+    drawRing(ctx, yCos * this.x + ySin * h/2, this.y, bow, r, scale, height, this.style);
   }
   else 
     drawImage(ctx, yCos * this.x + ySin * h/3, this.y, this.r, scale, height);

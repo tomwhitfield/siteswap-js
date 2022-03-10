@@ -1,10 +1,11 @@
 /* jshint -W097 */
 'use strict';
 
-function HeadBounce(timeUnit, left, zeros, twos) {
+function HeadBounce(timeUnit, left, zeros, twos, style) {
   this.beatLength = 2;
   this.beatIndex = 0;
   this.beats = [];
+  this.style = style;
 
   const allSame = (character, inputArray = []) => {
     const string = inputArray.map(e => e.value).join();
@@ -51,7 +52,7 @@ HeadBounce.prototype.update = function(a) {
 };
 
 HeadBounce.prototype.draw = function(ctx, x, y, r, scale, height) {
-  drawBall(ctx, x + this.x, y + this.y, scale, height, '#DDDDDD', r);
+  drawBall(ctx, x + this.x, y + this.y, scale, height, this.style, r);
 };
 
 /**

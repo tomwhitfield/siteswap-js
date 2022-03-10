@@ -52,7 +52,7 @@ function Hands(ss) {
   this.spinning = false;
 }
 
-Hands.prototype.getNextThrows = function(spinning) {
+Hands.prototype.getNextThrows = function() {
   const throws = {
     left: [],
     right: []
@@ -68,29 +68,13 @@ Hands.prototype.getNextThrows = function(spinning) {
   if (r.active && r.value !== 0)
     throws.right = this.right[this.rightIndex];
 
-  this.holding.left -= this.countThrownProps(throws.left, true);
-  this.holding.right -= this.countThrownProps(throws.right, true);
-
-  // Advance indices.
+  // Advance indices
   if (++this.leftIndex === this.left.length)
     this.leftIndex = 0;
   if (++this.rightIndex === this.right.length)
     this.rightIndex = 0;
 
   return throws;
-};
-
-Hands.prototype.makeCatches = function(catches) {
-  this.holding.left += catches.left;
-  this.holding.right += catches.right;
-};
-
-Hands.prototype.getHolding = function(spinning) {
-  return {
-    left: this.holding.left,
-    right: this.holding.right,
-    spinning: spinning,
-  };
 };
 
 Hands.prototype.update = function(count, timeUnit, height, scale, spinLength) {
@@ -243,7 +227,7 @@ Hands.prototype.validateSiteswap = function() {
     this.type = 'multiplex';
   else if (this.siteswap.match(/^(\([02468acegikmoqsuwy]x?,[02468acegikmoqsuwy]x?\))+\*?$/))
     this.type = 'synchronous';
-  else if (this.siteswap.match(/^(\(([02468acegikmoqsuwyx]x?|\[[02468acegikmoqsuwyx]{2,}\]),([02468acegikmoqsuwy]x?|\[[02468acegikmoqsuwyx]{2,}\])\))+\*?$/))
+  else if (this.siteswap.match(/^(\(([02468acegikmoqsuwyx]x?|\[[02468acegikminioqsuwyx]{2,}\]),([02468acegikmoqsuwy]x?|\[[02468acegikmoqsuwyx]{2,}\])\))+\*?$/))
     this.type = 'synchronous multiplex';
   else
     return false;
@@ -512,9 +496,8 @@ Hands.prototype.initHolding = function() {
   const numCatches = { left: {}, right: {} };
 
   // Run through the throws - rethrows until holding.left + holding.right = number
-  let count = 0;
+  let i = 0;
   while (this.holding.left + this.holding.right < this.number) {
-    const i = count;
     const index = i % this.period;
 
     this.holding.left += this.countThrownProps(this.left[index]) - (numCatches.left[i] || 0);
@@ -538,6 +521,6 @@ Hands.prototype.initHolding = function() {
       else numCatches.left[j] = (numCatches.left[j] || 0) + 1;
     });
 
-    count++;
+    i++;
   }
 };

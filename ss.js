@@ -76,10 +76,12 @@ SiteswapJS.prototype.draw = function() {
   // Clear canvas
   this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
 
-  // Fill background colour
-  if (this.options.backgroundColour) {
-    this.ctx.fillStyle = this.options.backgroundColour;
+  // Background
+  if (this.options.styles.background) {
+    this.ctx.fillStyle = this.options.styles.background.fill;
+    this.ctx.strokeStyle = this.options.styles.background.stroke;
     this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+    this.ctx.strokeRect(0, 0, this.canvas.width, this.canvas.height);
   }
 
   // Draw juggler and props
@@ -100,8 +102,8 @@ SiteswapJS.prototype.draw = function() {
   }
 };
 
-SiteswapJS.prototype.setDefaultOptions = function(options) {
-  const defaultOptions = {
+SiteswapJS.prototype.setDefaultOptions = function(custom) {
+  const options = {
     fps: 60,
     throwsPerSecond: 3,
     propType: 'b',
@@ -112,9 +114,45 @@ SiteswapJS.prototype.setDefaultOptions = function(options) {
     clubBalance: false,
     debug: false,
     controls: false,
+    styles: {
+      background: {
+        fill: '#FFF',
+        stroke: '#FFF',
+      },
+      props: [
+        {
+          fill: '#8BC34A',
+          stroke: '#333',
+        },
+      ],
+      headBounce: {
+        fill: '#DDD',
+        stroke: '#333',
+      },
+      clubBalance: {
+        stroke: '#333',
+      },
+      head: {
+        fill: '#FFDAC8',
+        stroke: '#333',
+      },
+      body: {
+        fill: '#BDBDBD',
+        stroke: '#333',
+      },
+    }
   };
 
-  options = Object.assign(defaultOptions, options);
+  function combineOptions(options, custom) {
+    for (const key of Object.keys(options)) {
+      if (!custom[key]) continue;
+
+      if (typeof custom[key] === 'object' && !Array.isArray(custom[key])) combineOptions(options[key], custom[key]);
+      else options[key] = custom[key];
+    }
+  }
+
+  combineOptions(options, custom);
 
   if (options.propType === 'c') options.controls = false;
 
@@ -208,8 +246,9 @@ SiteswapJS.prototype.addListeners = function() {
 /* jshint -W097 */
 'use strict';
 
-function ClubBalance(timeUnit) {
+function ClubBalance(timeUnit, style) {
   this.timeUnit = timeUnit;
+  this.style = style;
 
   this.maxR = 2.5;
 
@@ -241,7 +280,7 @@ ClubBalance.prototype.update = function(scale, height) {
 };
 
 ClubBalance.prototype.draw = function(ctx, x, y, scale, height) {
-  drawClub(ctx, x + this.x + this.px, y + this.y + this.py, 0, this.r, scale, height);
+  drawClub(ctx, x + this.x + this.px, y + this.y + this.py, 0, this.r, scale, height, this.style);
 };
 
 ClubBalance.prototype.getHeadReaction = function() {
@@ -249,29 +288,29 @@ ClubBalance.prototype.getHeadReaction = function() {
 };/* jshint -W097 */
 'use strict';
 
-const drawProp = (ctx, type, x, y, r, ry, scale, height) => {
+const drawProp = (ctx, type, x, y, r, ry, scale, height, style) => {
   if (type == 'b')
-    drawBall(ctx, x, y, scale, height);
+    drawBall(ctx, x, y, scale, height, style);
   else if (type == 'c')
-    drawClub(ctx, x, y, r, ry, scale, height);
+    drawClub(ctx, x, y, r, ry, scale, height, style);
   else if (type == 'r')
-    drawRing(ctx, x, y, 0, r, scale, height);
+    drawRing(ctx, x, y, 0, r, scale, height, style);
   else
     drawImage(ctx, x, y, r, scale, height);
 };
 
-const drawBall = (ctx, x, y, scale, height, fillColour, rotation = 0) => {
+const drawBall = (ctx, x, y, scale, height, style, rotation = 0) => {
   const w = scale * height / 80;
 
   ctx.beginPath();
   ctx.ellipse(x, y, Math.abs(Math.cos(rotation/180 * Math.PI)) * w, w, 0, 2 * Math.PI, false);
-  ctx.fillStyle = fillColour || '#8BC34A';
+  ctx.fillStyle = style.fill;
   ctx.fill();
-  ctx.strokeStyle = '#333333';
+  ctx.strokeStyle = style.stroke;
   ctx.stroke();
 };
 
-const drawRing = (ctx, x, y, bow, r, scale, height) => {
+const drawRing = (ctx, x, y, bow, r, scale, height, style) => {
   r %= 360;
   const w = height * scale / 10;
   
@@ -284,8 +323,8 @@ const drawRing = (ctx, x, y, bow, r, scale, height) => {
   ctx.translate(x, y);
   
   ctx.lineWidth = 2;
-  ctx.strokeStyle = '#333333';
-  ctx.fillStyle = '#9999FF';
+  ctx.strokeStyle = style.stroke;
+  ctx.fillStyle = style.fill;
   
   function side(o) {
     // Line
@@ -367,7 +406,7 @@ const drawImage = (ctx, x, y, r, scale, height, r2, isHead) => {
   ctx.restore();
 };
 
-const drawClub = (ctx, x, y, r, ry, scale, height) => {
+const drawClub = (ctx, x, y, r, ry, scale, height, style) => {
   r %= 360;
   const h = scale * 13/80 * height;
   const w = scale * 21/800 * height;
@@ -379,7 +418,7 @@ const drawClub = (ctx, x, y, r, ry, scale, height) => {
   ctx.translate(x,y);
   ctx.rotate(ry/180 * Math.PI);
   
-  ctx.strokeStyle = '#333333';
+  ctx.strokeStyle = style.stroke;
   
   // Knob
   ctx.beginPath();
@@ -545,126 +584,6 @@ const drawClub = (ctx, x, y, r, ry, scale, height) => {
   ctx.restore();
 };
 
-const drawJuggler = (ctx, x, y, r, scale, height, headBob, pos, propType, holding, headMoveX) => {
-  r %= 360;
-  const h = scale*height/4;
-  const w = scale*height/8;
-  
-  const yCos = Math.cos(r/180 * Math.PI);
-  const ySin = Math.sin(r/180 * Math.PI);
-  
-  ctx.save();
-  ctx.translate(x, y);
-  
-  ctx.strokeStyle = '#333333';
-  
-  // Head image
-  // drawImage(ctx, headMoveX, -36*h/40 + headBob, 0, scale, 3.2*height, r, true);
-
-  // Head
-  ctx.fillStyle = '#FFDAC8';
-  ctx.beginPath();
-  ctx.moveTo(yCos * -5*h/36 + headMoveX, -33*h/40 + headBob);
-  ctx.bezierCurveTo(yCos * -5*h/36 + headMoveX, -41*h/40 + headBob,
-    yCos * 5*h/36 + headMoveX, -41*h/40 + headBob,
-    yCos * 5*h/36 + headMoveX, -33*h/40 + headBob);
-  ctx.bezierCurveTo(yCos * 5*h/36 + headMoveX, -25*h/40 + headBob,
-    yCos * -5*h/36 + headMoveX, -25*h/40 + headBob,
-    yCos * -5*h/36 + headMoveX, -33*h/40 + headBob);
-  ctx.fill();
-  ctx.stroke();
-
-  function drawLeftArm() {
-
-    const handX = yCos * (pos.left.x - 6*w/8) + ySin * h/3;
-    const handY = -5*h/50 + pos.left.y;
-
-    ctx.beginPath();
-    ctx.moveTo(yCos * -w/2, -5*h/8);
-    ctx.lineTo(yCos * (-pos.left.x/8 - 6*w/8), -h/7); // Elbow
-    ctx.lineTo(handX, handY); // Hand
-    ctx.stroke();
-
-    // Prop in left hand
-    if (holding.left) {
-      const split = (propType === 'r') ? h/20 : (holding.left === 1) ? 0 : pos.left.y;
-
-      const startX = yCos * (pos.left.x - 6*w/8) + ySin * ((propType === 'r') ? h/2 : h/3); // - ((propType === 'r') ? (split / 2) : 0);
-      const startY = handY - ((propType === 'r') ? 0 : (split / 2));
-
-      for (let i = 0; i < holding.left; i++) {
-        const holdingX = startX + ((propType === 'r') ? i * (split / holding.left) : 0);
-        let holdingY = startY + ((propType === 'r') ? 0 : i * (split / holding.left));
-
-        let rotation = r;
-        if (propType === 'c') {
-          rotation = 270 - 0.5 * pos.left.y;
-          holdingY += 0.5 * pos.left.y;
-        }
-
-        drawProp(ctx, propType, holdingX, holdingY, rotation, 0, scale, height);
-      }
-    }
-  }
-
-  function drawRightArm() {
-    const handX = yCos * (pos.right.x + 6*w/8) + ySin * h/3;
-    const handY = -5*h/50 + pos.right.y;
-
-    ctx.beginPath();
-    ctx.moveTo(yCos * w/2, -5*h/8);
-    ctx.lineTo(yCos * (6*w/8 - pos.right.x/8), -h/7); // Elbow
-    ctx.lineTo(handX, handY); // Hand
-    ctx.stroke();
-    
-    // Prop in right hand
-    if (holding.right) {
-      const split = (propType === 'r') ? h/20 : (holding.right === 1) ? 0 : pos.right.y;
-      
-      const startX = yCos * (pos.right.x + 6*w/8) + ySin * ((propType === 'r') ? h/2 : h/3); //  - ((propType === 'r') ? (split / 2) : 0);
-      const startY = handY - ((propType === 'r') ? 0 : (split / 2));
-
-      for (let i = 0; i < holding.right; i++) {
-
-        const holdingX = startX + ((propType === 'r') ? i * (split / holding.right) : 0);
-        let holdingY = startY + ((propType === 'r') ? 0 : i * (split / holding.right));
-
-        let rotation = r;
-        if (propType === 'c') {
-          rotation = 270 - 0.5 * pos.right.y;
-          holdingY += 0.5 * pos.right.y;
-        }
-
-        drawProp(ctx, propType, holdingX, holdingY, rotation, 0, scale, height);
-      }
-    }
-  }
-
-  if (r >= 180) {
-    drawLeftArm();
-  } else {
-    drawRightArm();
-  }
-  
-  // Body
-  ctx.fillStyle = '#BDBDBD';
-  ctx.beginPath();
-  ctx.moveTo(yCos * -w/2, -5*h/8);
-  ctx.lineTo(yCos * w/2, -5*h/8);
-  ctx.lineTo(yCos * 7*w/20, 0);
-  ctx.lineTo(yCos * -7*w/20, 0);
-  ctx.lineTo(yCos * -w/2, -5*h/8);
-  ctx.fill();
-  ctx.stroke();
-  
-  if (r < 180) {
-    drawLeftArm();
-  } else {
-    drawRightArm();
-  }
-      
-  ctx.restore();
-};
 /* jshint -W083 */
 /* jshint -W097 */
 'use strict';
@@ -719,7 +638,7 @@ function Hands(ss) {
   this.spinning = false;
 }
 
-Hands.prototype.getNextThrows = function(spinning) {
+Hands.prototype.getNextThrows = function() {
   const throws = {
     left: [],
     right: []
@@ -735,29 +654,13 @@ Hands.prototype.getNextThrows = function(spinning) {
   if (r.active && r.value !== 0)
     throws.right = this.right[this.rightIndex];
 
-  this.holding.left -= this.countThrownProps(throws.left, true);
-  this.holding.right -= this.countThrownProps(throws.right, true);
-
-  // Advance indices.
+  // Advance indices
   if (++this.leftIndex === this.left.length)
     this.leftIndex = 0;
   if (++this.rightIndex === this.right.length)
     this.rightIndex = 0;
 
   return throws;
-};
-
-Hands.prototype.makeCatches = function(catches) {
-  this.holding.left += catches.left;
-  this.holding.right += catches.right;
-};
-
-Hands.prototype.getHolding = function(spinning) {
-  return {
-    left: this.holding.left,
-    right: this.holding.right,
-    spinning: spinning,
-  };
 };
 
 Hands.prototype.update = function(count, timeUnit, height, scale, spinLength) {
@@ -910,7 +813,7 @@ Hands.prototype.validateSiteswap = function() {
     this.type = 'multiplex';
   else if (this.siteswap.match(/^(\([02468acegikmoqsuwy]x?,[02468acegikmoqsuwy]x?\))+\*?$/))
     this.type = 'synchronous';
-  else if (this.siteswap.match(/^(\(([02468acegikmoqsuwyx]x?|\[[02468acegikmoqsuwyx]{2,}\]),([02468acegikmoqsuwy]x?|\[[02468acegikmoqsuwyx]{2,}\])\))+\*?$/))
+  else if (this.siteswap.match(/^(\(([02468acegikmoqsuwyx]x?|\[[02468acegikminioqsuwyx]{2,}\]),([02468acegikmoqsuwy]x?|\[[02468acegikmoqsuwyx]{2,}\])\))+\*?$/))
     this.type = 'synchronous multiplex';
   else
     return false;
@@ -1179,9 +1082,8 @@ Hands.prototype.initHolding = function() {
   const numCatches = { left: {}, right: {} };
 
   // Run through the throws - rethrows until holding.left + holding.right = number
-  let count = 0;
+  let i = 0;
   while (this.holding.left + this.holding.right < this.number) {
-    const i = count;
     const index = i % this.period;
 
     this.holding.left += this.countThrownProps(this.left[index]) - (numCatches.left[i] || 0);
@@ -1205,16 +1107,17 @@ Hands.prototype.initHolding = function() {
       else numCatches.left[j] = (numCatches.left[j] || 0) + 1;
     });
 
-    count++;
+    i++;
   }
 };
 /* jshint -W097 */
 'use strict';
 
-function HeadBounce(timeUnit, left, zeros, twos) {
+function HeadBounce(timeUnit, left, zeros, twos, style) {
   this.beatLength = 2;
   this.beatIndex = 0;
   this.beats = [];
+  this.style = style;
 
   const allSame = (character, inputArray = []) => {
     const string = inputArray.map(e => e.value).join();
@@ -1261,7 +1164,7 @@ HeadBounce.prototype.update = function(a) {
 };
 
 HeadBounce.prototype.draw = function(ctx, x, y, r, scale, height) {
-  drawBall(ctx, x + this.x, y + this.y, scale, height, '#DDDDDD', r);
+  drawBall(ctx, x + this.x, y + this.y, scale, height, this.style, r);
 };
 
 /**
@@ -1303,6 +1206,9 @@ function Juggler(options) {
   // Keeps track of where the hands should be and what throws need to be made
   this.hands = new Hands(options.siteswap);
 
+  this.headStyle = options.styles.head;
+  this.bodyStyle = options.styles.body;
+
   // Spin stuff
   this.spins = (options.spinOn0s || options.spinOn2s) && this.generateSpins(this.hands, options.spinOn0s, options.spinOn2s);
   this.spinIndex = 0;
@@ -1315,8 +1221,8 @@ function Juggler(options) {
   this.timeUnit = Math.round(options.fps / options.throwsPerSecond);
 
   // Head bounce & balance
-  this.headBounce = options.headBounce ? new HeadBounce(this.timeUnit, this.hands.left, options.spinOn0s, options.spinOn2s) : false;
-  this.clubBalance = options.clubBalance ? new ClubBalance(this.timeUnit) : false;
+  this.headBounce = options.headBounce ? new HeadBounce(this.timeUnit, this.hands.left, options.spinOn0s, options.spinOn2s, options.styles.headBounce) : false;
+  this.clubBalance = options.clubBalance ? new ClubBalance(this.timeUnit, options.styles.clubBalance) : false;
 
   this.width = options.width;
   this.height = options.height;
@@ -1332,7 +1238,7 @@ function Juggler(options) {
     this.scale *= 0.75;
 
   // Keeps track of the props being juggled
-  this.props = new Props(this.propType, this.timeUnit, this.a, this.scale, this.height);
+  this.props = new Props(this.propType, this.timeUnit, this.a, this.scale, this.height, this.hands.holding, options.styles.props);
 
   // For knowing when to throw
   this.count = 1;
@@ -1352,15 +1258,14 @@ Juggler.prototype.update = function() {
   this.move();
 
   // Move props
-  const catches = this.props.update();
-  this.hands.makeCatches(catches);
+  this.props.update();
   
   if (this.headBounce) this.headBounce.update(this.a);
   if (this.clubBalance) this.clubBalance.update(this.scale, this.height);
 
   // Make new throws
   if (this.count % this.timeUnit === 0) {
-    const throws = this.hands.getNextThrows(this.spinning);
+    const throws = this.hands.getNextThrows();
 
     this.props.makeThrows('left', throws.left, this.hands);
     this.props.makeThrows('right', throws.right, this.hands);
@@ -1378,8 +1283,9 @@ Juggler.prototype.draw = function(ctx) {
   const headBob = this.scale * this.height * Math.sin(this.count / (this.timeUnit / 2)) / 800;
   const headBounceRecoil = this.headBounce && this.headBounce.getHeadRecoil() * 10 * this.scale;
 
-  if (this.rotation <= 90 || 270 < this.rotation)
-    drawJuggler(ctx, centerX, 9 * this.height / 10, this.rotation + this.spinRotation, this.scale, this.height, headBob - headBounceRecoil, this.hands.positions, this.propType, this.hands.getHolding(this.spinning), this.clubBalance && this.clubBalance.getHeadReaction());
+  if (this.rotation <= 90 || 270 < this.rotation) {
+    this.drawBody(ctx, centerX, 9 * this.height / 10, this.rotation + this.spinRotation, headBob - headBounceRecoil);
+  }
 
   const forehead = 9 * this.height / 10 - 41*(this.scale*this.height)/160;
   if (this.headBounce) {
@@ -1393,8 +1299,9 @@ Juggler.prototype.draw = function(ctx) {
   const propsY = 9 * this.height / 10 - (this.scale * this.height / 80);
   this.props.draw(ctx, centerX, propsY, this.rotation);
 
-  if (90 < this.rotation && this.rotation <= 270)
-    drawJuggler(ctx, centerX, 9 * this.height / 10, this.rotation + this.spinRotation, this.scale, this.height, headBob - headBounceRecoil, this.hands.positions, this.propType, this.hands.getHolding(this.spinning), this.clubBalance && this.clubBalance.getHeadReaction());
+  if (90 < this.rotation && this.rotation <= 270) {
+    this.drawBody(ctx, centerX, 9 * this.height / 10, this.rotation + this.spinRotation, headBob - headBounceRecoil);
+  }
 };
 
 Juggler.prototype.move = function() {
@@ -1532,11 +1439,147 @@ Juggler.prototype.calculateScale = function(w, h) {
 Juggler.prototype.calculateAcceleration = function(s, t) {
   return (2 * s) / (t * t);
 };
+
+Juggler.prototype.drawBody = function(ctx, x, y, r, headBob) {
+  const pos = this.hands.positions;
+  const props = this.props.props;
+  const headMoveX = this.clubBalance && this.clubBalance.getHeadReaction();
+
+  r %= 360;
+  const h = this.scale * this.height / 4;
+  const w = this.scale * this.height / 8;
+  
+  const yCos = Math.cos(r/180 * Math.PI);
+  const ySin = Math.sin(r/180 * Math.PI);
+  
+  ctx.save();
+  ctx.translate(x, y);
+  
+  // Head image
+  // drawImage(ctx, headMoveX, -36*h/40 + headBob, 0, this.scale, 3.2*this.height, r, true);
+
+  // Head
+  ctx.fillStyle = this.headStyle.fill;
+  ctx.strokeStyle = this.headStyle.stroke;
+  ctx.beginPath();
+  ctx.moveTo(yCos * -5*h/36 + headMoveX, -33*h/40 + headBob);
+  ctx.bezierCurveTo(yCos * -5*h/36 + headMoveX, -41*h/40 + headBob,
+    yCos * 5*h/36 + headMoveX, -41*h/40 + headBob,
+    yCos * 5*h/36 + headMoveX, -33*h/40 + headBob);
+  ctx.bezierCurveTo(yCos * 5*h/36 + headMoveX, -25*h/40 + headBob,
+    yCos * -5*h/36 + headMoveX, -25*h/40 + headBob,
+    yCos * -5*h/36 + headMoveX, -33*h/40 + headBob);
+  ctx.fill();
+  ctx.stroke();
+
+  let drawLeftArm = () => {
+    const handX = yCos * (pos.left.x - 6*w/8) + ySin * h/3;
+    const handY = -5*h/50 + pos.left.y;
+
+    ctx.beginPath();
+    ctx.strokeStyle = this.bodyStyle.stroke;
+    ctx.moveTo(yCos * -w/2, -5*h/8);
+    ctx.lineTo(yCos * (-pos.left.x/8 - 6*w/8), -h/7); // Elbow
+    ctx.lineTo(handX, handY); // Hand
+    ctx.stroke();
+
+    // Props in left hand
+    if (props.left.length) {
+      const split = (this.propType === 'r') ? h/20 : (props.left.length === 1) ? 0 : pos.left.y;
+
+      const startX = yCos * (pos.left.x - 6*w/8) + ySin * ((this.propType === 'r') ? h/2 : h/3); // - ((this.propType === 'r') ? (split / 2) : 0);
+      const startY = handY - ((this.propType === 'r') ? 0 : (split / 2));
+
+      for (let i = 0; i < props.left.length; i++) {
+        const holdingX = startX + ((this.propType === 'r') ? i * (split / props.left.length) : 0);
+        let holdingY = startY + ((this.propType === 'r') ? 0 : i * (split / props.left.length));
+
+        let rotation = r;
+        if (this.propType === 'c') {
+          rotation = 270 - 0.5 * pos.left.y;
+          holdingY += 0.5 * pos.left.y;
+        }
+
+        drawProp(ctx, this.propType, holdingX, holdingY, rotation, 0, this.scale, this.height, props.left[i].style);
+        // props.left[i].draw(ctx, holdingX, holdingY, rotation, this.scale, this.height);
+      }
+    }
+  };
+
+  let drawRightArm = () => {
+    const handX = yCos * (pos.right.x + 6*w/8) + ySin * h/3;
+    const handY = -5*h/50 + pos.right.y;
+
+    ctx.beginPath();
+    ctx.strokeStyle = this.bodyStyle.stroke;
+    ctx.moveTo(yCos * w/2, -5*h/8);
+    ctx.lineTo(yCos * (6*w/8 - pos.right.x/8), -h/7); // Elbow
+    ctx.lineTo(handX, handY); // Hand
+    ctx.stroke();
+    
+    // Props in right hand
+    if (props.right.length) {
+      const split = (this.propType === 'r') ? h/20 : (props.right.length === 1) ? 0 : pos.right.y;
+      
+      const startX = yCos * (pos.right.x + 6*w/8) + ySin * ((this.propType === 'r') ? h/2 : h/3); //  - ((this.propType === 'r') ? (split / 2) : 0);
+      const startY = handY - ((this.propType === 'r') ? 0 : (split / 2));
+
+      for (let i = 0; i < props.right.length; i++) {
+
+        const holdingX = startX + ((this.propType === 'r') ? i * (split / props.right.length) : 0);
+        let holdingY = startY + ((this.propType === 'r') ? 0 : i * (split / props.right.length));
+
+        let rotation = r;
+        if (this.propType === 'c') {
+          rotation = 270 - 0.5 * pos.right.y;
+          holdingY += 0.5 * pos.right.y;
+        }
+
+        drawProp(ctx, this.propType, holdingX, holdingY, rotation, 0, this.scale, this.height, props.right[i].style);
+        // props.right[i].draw(ctx, holdingX, holdingY, rotation, this.scale, this.height);
+      }
+    }
+  };
+
+  // TODO improve this
+  drawRightArm = drawRightArm.bind(this);
+  drawLeftArm = drawLeftArm.bind(this);
+
+  if (r >= 180) {
+    drawLeftArm();
+  } else {
+    drawRightArm();
+  }
+  
+  // Body
+  ctx.fillStyle = this.bodyStyle.fill;
+  ctx.strokeStyle = this.bodyStyle.stroke;
+  ctx.beginPath();
+  ctx.moveTo(yCos * -w/2, -5*h/8);
+  ctx.lineTo(yCos * w/2, -5*h/8);
+  ctx.lineTo(yCos * 7*w/20, 0);
+  ctx.lineTo(yCos * -7*w/20, 0);
+  ctx.lineTo(yCos * -w/2, -5*h/8);
+  ctx.fill();
+  ctx.stroke();
+  
+  if (r < 180) {
+    drawLeftArm();
+  } else {
+    drawRightArm();
+  }
+      
+  ctx.restore();
+};
 /* jshint -W097 */
 'use strict';
 
-function Prop(propType, ssValue, startX, destX, timeUnit, a) {
+function Prop(propType, style) {
   this.propType = propType;
+  this.style = style;
+}
+
+Prop.prototype.throw = function(ssValue, startX, destX, timeUnit, a) {
   this.ssValue = ssValue;
 
   // How long the throw should take
@@ -1551,7 +1594,7 @@ function Prop(propType, ssValue, startX, destX, timeUnit, a) {
   this.vy = -(a * this.t) / 2;
 
   // Initial rotation
-  if (propType === 'r') {
+  if (this.propType === 'r') {
     // Tangential to direction of travel
     this.r = 90 - 180 * Math.atan(-this.vy / this.vx) / Math.PI;
 
@@ -1566,22 +1609,22 @@ function Prop(propType, ssValue, startX, destX, timeUnit, a) {
       this.r *= 0.2;
   }
   // Clubs and images
-  else if (propType !== 'b') {
+  else if (this.propType !== 'b') {
     this.r = 270;
   }
 
   // Rotational velocity
-  if (propType == 'i') 
+  if (this.propType == 'i') 
     this.vr = 30 * (Math.random() - 0.5);
   else {
     if (ssValue == 2)
       this.vr = 0;
-    else if (propType === 'c')
+    else if (this.propType === 'c')
       this.vr = 360 * (Math.floor(Math.round(ssValue) / 2)) / ((ssValue - 0.5) * timeUnit);
-    else if (propType === 'r')
+    else if (this.propType === 'r')
       this.vr = 0;
   }
-}
+};
 
 Prop.prototype.update = function(a) {
   this.x += this.vx;
@@ -1603,14 +1646,14 @@ Prop.prototype.draw = function(ctx, x, y, r, scale, height) {
   ctx.translate(x, y);
 
   if (this.propType == 'b')
-    drawBall(ctx, yCos * this.x + ySin * h/3, this.y, scale, height);
+    drawBall(ctx, yCos * this.x + ySin * h/3, this.y, scale, height, this.style);
 
   else if (this.propType == 'c')
-    drawClub(ctx, yCos * this.x + ySin * h/3, this.y, yCos * this.r, 5 * this.vx, scale, height);
+    drawClub(ctx, yCos * this.x + ySin * h/3, this.y, yCos * this.r, 5 * this.vx, scale, height, this.style);
 
   else if (this.propType == 'r') {
     const bow = (this.ssValue % 2 === 1) ? ((this.ssValue - 1) / 2) * this.vx : 0;
-    drawRing(ctx, yCos * this.x + ySin * h/2, this.y, bow, r, scale, height);
+    drawRing(ctx, yCos * this.x + ySin * h/2, this.y, bow, r, scale, height, this.style);
   }
   else 
     drawImage(ctx, yCos * this.x + ySin * h/3, this.y, this.r, scale, height);
@@ -1620,27 +1663,39 @@ Prop.prototype.draw = function(ctx, x, y, r, scale, height) {
 /* jshint -W097 */
 'use strict';
 
-function Props(type, timeUnit, a, scale, height) {
+function Props(type, timeUnit, a, scale, height, holding, styles) {
   this.type = type;
   this.timeUnit = timeUnit;
   this.a = a;
   this.scale = scale;
   this.height = height;
-  this.props = [];
+  
+  this.props = {
+    left: [], // Stack of props in left hand
+    right: [], // Stack of props in right hand
+    air: [],
+  };
+
+  for (let i = 0; i < holding.left; i++) {
+    const style = styles[(i * 2) % styles.length];
+    this.props.left.push(new Prop(this.type, style));
+  }
+
+  for (let i = 0; i < holding.right; i++) {
+    const style = styles[(i * 2 + 1) % styles.length];
+    this.props.right.push(new Prop(this.type, style));
+  }
 }
 
 Props.prototype.update = function() {
-  const catches = { left: 0, right: 0 };
-
-  for (let i in this.props) {
-    const c = this.props[i].update(this.a);
+  for (let i in this.props.air) {
+    const c = this.props.air[i].update(this.a);
+    
     if (c !== 'none') {
-      this.props.splice(i, 1);
-      catches[c]++;
+      // Move prop from the "air" into the appropriate hand
+      this.props[c] = this.props[c].concat(this.props.air.splice(i, 1));
     }
   }
-
-  return catches;
 };
 
 Props.prototype.draw = function(ctx, x, y, r) {
@@ -1656,8 +1711,8 @@ Props.prototype.draw = function(ctx, x, y, r) {
     return 0;
   }
 
-  this.props.sort(compareZ);
-  this.props.forEach(prop => prop.draw(ctx, x, y, r, this.scale, this.height));
+  this.props.air.sort(compareZ);
+  this.props.air.forEach(prop => prop.draw(ctx, x, y, r, this.scale, this.height));
 };
 
 Props.prototype.makeThrows = function(side, throws, hands) {
@@ -1694,7 +1749,9 @@ Props.prototype.makeThrows = function(side, throws, hands) {
       destX *= -1;
     }
 
-    this.props.push(new Prop(this.type, ssValue + start, startX, destX, this.timeUnit, this.a));
+    const prop = this.props[side].pop();
+    prop.throw(ssValue + start, startX, destX, this.timeUnit, this.a);
+    this.props.air.push(prop);
 
     start += multiplexSplit / throws.length;
   }

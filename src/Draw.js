@@ -1,29 +1,29 @@
 /* jshint -W097 */
 'use strict';
 
-const drawProp = (ctx, type, x, y, r, ry, scale, height) => {
+const drawProp = (ctx, type, x, y, r, ry, scale, height, style) => {
   if (type == 'b')
-    drawBall(ctx, x, y, scale, height);
+    drawBall(ctx, x, y, scale, height, style);
   else if (type == 'c')
-    drawClub(ctx, x, y, r, ry, scale, height);
+    drawClub(ctx, x, y, r, ry, scale, height, style);
   else if (type == 'r')
-    drawRing(ctx, x, y, 0, r, scale, height);
+    drawRing(ctx, x, y, 0, r, scale, height, style);
   else
     drawImage(ctx, x, y, r, scale, height);
 };
 
-const drawBall = (ctx, x, y, scale, height, fillColour, rotation = 0) => {
+const drawBall = (ctx, x, y, scale, height, style, rotation = 0) => {
   const w = scale * height / 80;
 
   ctx.beginPath();
   ctx.ellipse(x, y, Math.abs(Math.cos(rotation/180 * Math.PI)) * w, w, 0, 2 * Math.PI, false);
-  ctx.fillStyle = fillColour || '#8BC34A';
+  ctx.fillStyle = style.fill;
   ctx.fill();
-  ctx.strokeStyle = '#333333';
+  ctx.strokeStyle = style.stroke;
   ctx.stroke();
 };
 
-const drawRing = (ctx, x, y, bow, r, scale, height) => {
+const drawRing = (ctx, x, y, bow, r, scale, height, style) => {
   r %= 360;
   const w = height * scale / 10;
   
@@ -36,8 +36,8 @@ const drawRing = (ctx, x, y, bow, r, scale, height) => {
   ctx.translate(x, y);
   
   ctx.lineWidth = 2;
-  ctx.strokeStyle = '#333333';
-  ctx.fillStyle = '#9999FF';
+  ctx.strokeStyle = style.stroke;
+  ctx.fillStyle = style.fill;
   
   function side(o) {
     // Line
@@ -119,7 +119,7 @@ const drawImage = (ctx, x, y, r, scale, height, r2, isHead) => {
   ctx.restore();
 };
 
-const drawClub = (ctx, x, y, r, ry, scale, height) => {
+const drawClub = (ctx, x, y, r, ry, scale, height, style) => {
   r %= 360;
   const h = scale * 13/80 * height;
   const w = scale * 21/800 * height;
@@ -131,7 +131,7 @@ const drawClub = (ctx, x, y, r, ry, scale, height) => {
   ctx.translate(x,y);
   ctx.rotate(ry/180 * Math.PI);
   
-  ctx.strokeStyle = '#333333';
+  ctx.strokeStyle = style.stroke;
   
   // Knob
   ctx.beginPath();
@@ -297,123 +297,3 @@ const drawClub = (ctx, x, y, r, ry, scale, height) => {
   ctx.restore();
 };
 
-const drawJuggler = (ctx, x, y, r, scale, height, headBob, pos, propType, holding, headMoveX) => {
-  r %= 360;
-  const h = scale*height/4;
-  const w = scale*height/8;
-  
-  const yCos = Math.cos(r/180 * Math.PI);
-  const ySin = Math.sin(r/180 * Math.PI);
-  
-  ctx.save();
-  ctx.translate(x, y);
-  
-  ctx.strokeStyle = '#333333';
-  
-  // Head image
-  // drawImage(ctx, headMoveX, -36*h/40 + headBob, 0, scale, 3.2*height, r, true);
-
-  // Head
-  ctx.fillStyle = '#FFDAC8';
-  ctx.beginPath();
-  ctx.moveTo(yCos * -5*h/36 + headMoveX, -33*h/40 + headBob);
-  ctx.bezierCurveTo(yCos * -5*h/36 + headMoveX, -41*h/40 + headBob,
-    yCos * 5*h/36 + headMoveX, -41*h/40 + headBob,
-    yCos * 5*h/36 + headMoveX, -33*h/40 + headBob);
-  ctx.bezierCurveTo(yCos * 5*h/36 + headMoveX, -25*h/40 + headBob,
-    yCos * -5*h/36 + headMoveX, -25*h/40 + headBob,
-    yCos * -5*h/36 + headMoveX, -33*h/40 + headBob);
-  ctx.fill();
-  ctx.stroke();
-
-  function drawLeftArm() {
-
-    const handX = yCos * (pos.left.x - 6*w/8) + ySin * h/3;
-    const handY = -5*h/50 + pos.left.y;
-
-    ctx.beginPath();
-    ctx.moveTo(yCos * -w/2, -5*h/8);
-    ctx.lineTo(yCos * (-pos.left.x/8 - 6*w/8), -h/7); // Elbow
-    ctx.lineTo(handX, handY); // Hand
-    ctx.stroke();
-
-    // Prop in left hand
-    if (holding.left) {
-      const split = (propType === 'r') ? h/20 : (holding.left === 1) ? 0 : pos.left.y;
-
-      const startX = yCos * (pos.left.x - 6*w/8) + ySin * ((propType === 'r') ? h/2 : h/3); // - ((propType === 'r') ? (split / 2) : 0);
-      const startY = handY - ((propType === 'r') ? 0 : (split / 2));
-
-      for (let i = 0; i < holding.left; i++) {
-        const holdingX = startX + ((propType === 'r') ? i * (split / holding.left) : 0);
-        let holdingY = startY + ((propType === 'r') ? 0 : i * (split / holding.left));
-
-        let rotation = r;
-        if (propType === 'c') {
-          rotation = 270 - 0.5 * pos.left.y;
-          holdingY += 0.5 * pos.left.y;
-        }
-
-        drawProp(ctx, propType, holdingX, holdingY, rotation, 0, scale, height);
-      }
-    }
-  }
-
-  function drawRightArm() {
-    const handX = yCos * (pos.right.x + 6*w/8) + ySin * h/3;
-    const handY = -5*h/50 + pos.right.y;
-
-    ctx.beginPath();
-    ctx.moveTo(yCos * w/2, -5*h/8);
-    ctx.lineTo(yCos * (6*w/8 - pos.right.x/8), -h/7); // Elbow
-    ctx.lineTo(handX, handY); // Hand
-    ctx.stroke();
-    
-    // Prop in right hand
-    if (holding.right) {
-      const split = (propType === 'r') ? h/20 : (holding.right === 1) ? 0 : pos.right.y;
-      
-      const startX = yCos * (pos.right.x + 6*w/8) + ySin * ((propType === 'r') ? h/2 : h/3); //  - ((propType === 'r') ? (split / 2) : 0);
-      const startY = handY - ((propType === 'r') ? 0 : (split / 2));
-
-      for (let i = 0; i < holding.right; i++) {
-
-        const holdingX = startX + ((propType === 'r') ? i * (split / holding.right) : 0);
-        let holdingY = startY + ((propType === 'r') ? 0 : i * (split / holding.right));
-
-        let rotation = r;
-        if (propType === 'c') {
-          rotation = 270 - 0.5 * pos.right.y;
-          holdingY += 0.5 * pos.right.y;
-        }
-
-        drawProp(ctx, propType, holdingX, holdingY, rotation, 0, scale, height);
-      }
-    }
-  }
-
-  if (r >= 180) {
-    drawLeftArm();
-  } else {
-    drawRightArm();
-  }
-  
-  // Body
-  ctx.fillStyle = '#BDBDBD';
-  ctx.beginPath();
-  ctx.moveTo(yCos * -w/2, -5*h/8);
-  ctx.lineTo(yCos * w/2, -5*h/8);
-  ctx.lineTo(yCos * 7*w/20, 0);
-  ctx.lineTo(yCos * -7*w/20, 0);
-  ctx.lineTo(yCos * -w/2, -5*h/8);
-  ctx.fill();
-  ctx.stroke();
-  
-  if (r < 180) {
-    drawLeftArm();
-  } else {
-    drawRightArm();
-  }
-      
-  ctx.restore();
-};

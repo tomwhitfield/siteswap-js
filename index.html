@@ -5,7 +5,7 @@
 	</head>
 	
 	<body onload="juggle()" style="margin: 0">
-		<canvas id="stage" width="480" height="640" style="border: 1px solid #333333;"></canvas>
+		<canvas id="stage" width="480" height="640"></canvas>
 
 		<!-- <script src="ss.js"></script> -->
 		<script src="src/Animator.js"></script>
@@ -29,9 +29,42 @@
 				fps: 60,
 				throwsPerSecond: 3,
 				exportGif: false,
-				backgroundColour: '#FFFFFF',
+				backgroundColor: '#FFFFFF',
 				controls: true,
 				debug: true,
+				styles: {
+					background: {
+						stroke: '#333',
+					},
+					props: [
+						{
+							fill: 'lightblue',
+							stroke: '#333',
+						},
+						{
+							fill: 'yellow',
+							stroke: '#333',
+						},
+						{
+							fill: 'palegreen',
+							stroke: '#333',
+						},
+					],
+					headBounce: {
+						fill: 'red',
+					},
+					clubBalance: {
+						stroke: 'darkblue',
+					},
+					head: {
+						fill: '#FFDBAC',
+						stroke: '#333333',
+					},
+					body: {
+						fill: '#CCCCCC',
+						stroke: '#333333',
+					}
+				},
 			};
 
 			let animator;
@@ -46,7 +79,6 @@
 				return {
 					...options,
 					propType,
-					// spins,
 					spinOn0s,
 					spinOn2s,
 					headBounce,
