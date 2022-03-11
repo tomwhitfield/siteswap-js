@@ -14,12 +14,12 @@ function Props(type, timeUnit, a, scale, height, holding, styles) {
     air: [],
   };
 
-  for (let i = 0; i < holding.left; i++) {
+  for (let i = holding.left - 1; i >= 0 ; i--) {
     const style = styles[(i * 2) % styles.length];
     this.props.left.push(new Prop(this.type, style));
   }
 
-  for (let i = 0; i < holding.right; i++) {
+  for (let i = holding.right - 1; i >= 0; i--) {
     const style = styles[(i * 2 + 1) % styles.length];
     this.props.right.push(new Prop(this.type, style));
   }
