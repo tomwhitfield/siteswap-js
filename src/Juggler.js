@@ -39,7 +39,7 @@ function Juggler(options) {
     this.scale *= 0.75;
 
   // Keeps track of the props being juggled
-  this.props = new Props(this.propType, this.timeUnit, this.a, this.scale, this.height, this.hands.holding, options.styles.props);
+  this.props = new Props(this.propType, this.timeUnit, this.a, this.scale, this.height, this.hands, options.styles.props);
 
   // For knowing when to throw
   this.count = 1;

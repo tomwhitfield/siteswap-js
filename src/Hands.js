@@ -11,13 +11,11 @@ function Hands(ss) {
   this.number = 0;
   this.valid = this.validateSiteswap();
   this.catches = {};
-  this.holding = { left: 0, right: 0 };
 
   if (this.valid) {
     this.sync = this.type === 'synchronous' || this.type === 'synchronous multiplex';
     this.period = this.left.length;
     this.initCatches();
-    this.initHolding();
   } else {
     throw new Error('Invalid siteswap');
   }
@@ -487,40 +485,5 @@ Hands.prototype.initCatches = function() {
       if (t.value > 0 && t.value % 2 === 0) this.catches.right[index].push(t.value);
       else this.catches.left[index].push(Math.abs(t.value));
     });
-  }
-};
-
-Hands.prototype.countThrownProps = (throws, onlyActiveThrows = false) => throws.filter(t => !onlyActiveThrows || t.active).map(t => 0 + !!t.value).reduce((acc, val) => acc + val, 0);
-
-Hands.prototype.initHolding = function() {
-  const numCatches = { left: {}, right: {} };
-
-  // Run through the throws - rethrows until holding.left + holding.right = number
-  let i = 0;
-  while (this.holding.left + this.holding.right < this.number) {
-    const index = i % this.period;
-
-    this.holding.left += this.countThrownProps(this.left[index]) - (numCatches.left[i] || 0);
-    this.holding.right += this.countThrownProps(this.right[index]) - (numCatches.right[i] || 0);
-
-    this.left[index].forEach(t => {
-      const v = t.value;
-      const j = i + Math.abs(v);
-
-      if (v === 0) return;
-      if (v > 0 && v % 2 === 0) numCatches.left[j] = (numCatches.left[j] || 0) + 1;
-      else numCatches.right[j] = (numCatches.right[j] || 0) + 1;
-    });
-
-    this.right[index].forEach(t => {
-      const v = t.value;
-      const j = i + Math.abs(v);
-
-      if (v === 0) return;
-      if (v > 0 && v % 2 === 0) numCatches.right[j] = (numCatches.right[j] || 0) + 1;
-      else numCatches.left[j] = (numCatches.left[j] || 0) + 1;
-    });
-
-    i++;
   }
 };
