@@ -104,17 +104,16 @@ const headImage = new Image();
 // headImage.src = 'src/poop.png';
 
 const propImage = new Image();
-// propImage.src = 'src/poop.png';
+propImage.src = 'src/poop.png';
 
-const drawImage = (ctx, x, y, r, scale, height, r2, isHead) => {
+const drawImage = (ctx, x, y, r, scale, height, r2 = 0, isHead = false) => {
   const image = isHead ? headImage : propImage;
-  const widthScale = Math.abs(Math.cos(r2/180 * Math.PI));
-  const w = scale * height / 40;
+  const w = scale * height / 12;
   
   ctx.save();
   ctx.translate(x, y);
   ctx.rotate(r/180 * Math.PI);
-  ctx.scale(widthScale * w/image.width, w/image.width);
+  ctx.scale(w/image.width, w/image.width);
   ctx.drawImage(image, -image.width/2, -image.width/2);
   ctx.restore();
 };

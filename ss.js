@@ -391,17 +391,16 @@ const headImage = new Image();
 // headImage.src = 'src/poop.png';
 
 const propImage = new Image();
-// propImage.src = 'src/poop.png';
+propImage.src = 'src/poop.png';
 
-const drawImage = (ctx, x, y, r, scale, height, r2, isHead) => {
+const drawImage = (ctx, x, y, r, scale, height, r2 = 0, isHead = false) => {
   const image = isHead ? headImage : propImage;
-  const widthScale = Math.abs(Math.cos(r2/180 * Math.PI));
-  const w = scale * height / 40;
+  const w = scale * height / 12;
   
   ctx.save();
   ctx.translate(x, y);
   ctx.rotate(r/180 * Math.PI);
-  ctx.scale(widthScale * w/image.width, w/image.width);
+  ctx.scale(w/image.width, w/image.width);
   ctx.drawImage(image, -image.width/2, -image.width/2);
   ctx.restore();
 };
@@ -1461,6 +1460,8 @@ Juggler.prototype.drawBody = function(ctx, x, y, r, headBob) {
         if (this.propType === 'c') {
           rotation = 270 - 0.5 * pos.left.y;
           holdingY += 0.5 * pos.left.y;
+        } else if (this.propType === 'i') {
+          rotation = props.left[0].r;
         }
 
         drawProp(ctx, this.propType, holdingX, holdingY, rotation, 0, this.scale, this.height, props.left[i].style);
@@ -1496,6 +1497,8 @@ Juggler.prototype.drawBody = function(ctx, x, y, r, headBob) {
         if (this.propType === 'c') {
           rotation = 270 - 0.5 * pos.right.y;
           holdingY += 0.5 * pos.right.y;
+        } else if (this.propType === 'i') {
+          rotation = props.right[0].r;
         }
 
         drawProp(ctx, this.propType, holdingX, holdingY, rotation, 0, this.scale, this.height, props.right[i].style);
@@ -1578,7 +1581,7 @@ Prop.prototype.throw = function(ssValue, startX, destX, timeUnit, a) {
 
   // Rotational velocity
   if (this.propType == 'i') 
-    this.vr = 30 * (Math.random() - 0.5);
+    this.vr = 20 * (Math.random() - 0.5);
   else {
     if (ssValue == 2)
       this.vr = 0;

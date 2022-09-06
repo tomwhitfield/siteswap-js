@@ -42,7 +42,7 @@ Prop.prototype.throw = function(ssValue, startX, destX, timeUnit, a) {
 
   // Rotational velocity
   if (this.propType == 'i') 
-    this.vr = 30 * (Math.random() - 0.5);
+    this.vr = 20 * (Math.random() - 0.5);
   else {
     if (ssValue == 2)
       this.vr = 0;

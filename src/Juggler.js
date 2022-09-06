@@ -299,6 +299,8 @@ Juggler.prototype.drawBody = function(ctx, x, y, r, headBob) {
         if (this.propType === 'c') {
           rotation = 270 - 0.5 * pos.left.y;
           holdingY += 0.5 * pos.left.y;
+        } else if (this.propType === 'i') {
+          rotation = props.left[0].r;
         }
 
         drawProp(ctx, this.propType, holdingX, holdingY, rotation, 0, this.scale, this.height, props.left[i].style);
@@ -334,6 +336,8 @@ Juggler.prototype.drawBody = function(ctx, x, y, r, headBob) {
         if (this.propType === 'c') {
           rotation = 270 - 0.5 * pos.right.y;
           holdingY += 0.5 * pos.right.y;
+        } else if (this.propType === 'i') {
+          rotation = props.right[0].r;
         }
 
         drawProp(ctx, this.propType, holdingX, holdingY, rotation, 0, this.scale, this.height, props.right[i].style);
