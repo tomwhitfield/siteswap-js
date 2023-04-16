@@ -22,7 +22,7 @@
   "author": "Tom Whitfield",
   "license": "ISC",
   "dependencies": {
-    "jshint": "2.12.0",
+    "jshint": "2.13.6",
     "minify": "7.0.2",
     "watch-http-server": "0.7.6"
   }
